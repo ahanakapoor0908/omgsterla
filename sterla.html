@@ -41,14 +41,14 @@ a {text-decoration:none;}
 .content { width:100%; padding:30px; overflow-y:scroll; background:linear-gradient(180deg,#f5f7fb,#e3f2fd);}
 .content h1 { color:#0d47a1; margin-bottom:20px; font-size:32px; }
 .subject-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; }
-.subject-card { background:rgba(255,255,255,0.5); padding:20px; border-radius:20px; box-shadow:0 8px 30px rgba(0,0,0,0.15); cursor:pointer; transition:0.3s; text-align:center;}
-.subject-card img {width:50px; margin-bottom:10px;}
+.subject-card { background:rgba(255,255,255,0.5); padding:20px; border-radius:20px; box-shadow:0 8px 30px rgba(0,0,0,0.15); cursor:pointer; transition:0.3s; text-align:center; font-size:24px;}
 .subject-card:hover { transform:translateY(-5px) scale(1.05); box-shadow:0 15px 40px rgba(0,0,0,0.2);}
 .mindmap-bubble { display:inline-block; padding:14px 24px; background:#bbdefb; border-radius:50px; margin:10px; font-size:16px; color:#0d47a1; animation:bubble 0.4s ease; cursor:pointer; transition:0.3s; }
-.mindmap-bubble:hover { transform:scale(1.15); background:#90caf9; }
+.mindmap-bubble:hover { transform:scale(1.15); background:#90caf9; animation:pulse 1s infinite alternate;}
 @keyframes bubble { from{transform:scale(0.7); opacity:0;} to{transform:scale(1); opacity:1;} }
+@keyframes pulse { from{box-shadow:0 0 5px #90caf9;} to{box-shadow:0 0 20px #90caf9;} }
 .quiz-card,.worksheet-card,.hw-card { background:#ffffffcc; padding:20px; border-radius:15px; margin:10px 0; box-shadow:0 5px 15px rgba(0,0,0,0.1);}
-textarea { resize:none; }
+textarea { resize:none; width:100%; min-height:80px; padding:10px; border-radius:10px; border:2px solid #0d47a1; margin-bottom:10px;}
 #chatContainer { height:200px; overflow-y:scroll; border:1px solid #0d47a1; border-radius:12px; padding:10px; margin-bottom:10px; background:rgba(255,255,255,0.5);}
 #chatInput { width:80%; padding:10px; border-radius:10px; border:2px solid #0d47a1;}
 #sendBtn { padding:10px 15px; background:#0d47a1; color:white; border:none; border-radius:10px; cursor:pointer;}
@@ -60,6 +60,11 @@ textarea { resize:none; }
 #welcomeCard h2 {font-size:28px; color:#0d47a1; margin-bottom:10px;}
 #welcomeCard p {font-size:18px; color:#0d47a1; line-height:1.5;}
 
+/* REWARDS/PROGRESS */
+#rewardsPage {display:none;}
+.progress-bar {background:#bbdefb; border-radius:20px; overflow:hidden; margin-bottom:15px;}
+.progress-bar-inner {height:24px; background:#0d47a1; width:0%; line-height:24px; color:white; text-align:center; transition:width 1s;}
+.reward-card {background:#fff9c4; padding:15px; margin:10px 0; border-radius:12px; box-shadow:0 5px 15px rgba(0,0,0,0.1);}
 </style>
 </head>
 <body>
@@ -89,6 +94,7 @@ textarea { resize:none; }
 <button class="nav-btn" onclick="showPage('quizPage')"><span class="nav-icon">❓</span><span class="nav-text">Quiz</span></button>
 <button class="nav-btn" onclick="showPage('worksheetPage')"><span class="nav-icon">📄</span><span class="nav-text">Worksheet</span></button>
 <button class="nav-btn" onclick="showPage('homeworkPage')"><span class="nav-icon">📤</span><span class="nav-text">Submit Homework</span></button>
+<button class="nav-btn" onclick="showPage('rewardsPage')"><span class="nav-icon">🏆</span><span class="nav-text">Rewards</span></button>
 <div id="teacherOnly" style="display:none;">
 <button class="nav-btn" onclick="showPage('studentListPage')"><span class="nav-icon">🧑‍🎓</span><span class="nav-text">View Students</span></button>
 <button class="nav-btn" onclick="showPage('teacherHWPage')"><span class="nav-icon">📥</span><span class="nav-text">View Homework</span></button>
@@ -123,7 +129,11 @@ textarea { resize:none; }
 <div id="teacherHWPage" style="display:none;"><h1>Homework Submissions</h1><div id="allHW"></div></div>
 <div id="chatPage" style="display:none;"><h1>Class Chat</h1><div id="chatContainer"></div><input id="chatInput" placeholder="Type message"><button id="sendBtn">Send</button></div>
 
-</div>
+<div id="rewardsPage">
+<h1>Rewards & Progress</h1>
+<div class="progress-bar"><div class="progress-bar-inner" id="progressBar">50%</div></div>
+<div class="reward-card">Completed 2 Quizzes – 🎉 Badge Earned!</div>
+<div class="reward-card">Submitted 1 Homework – 🏅 Badge Earned!</div>
 </div>
 
 <script>
@@ -131,32 +141,99 @@ window.onload=function(){
 let currentUser='',currentRole='',currentSubject='',currentTopic='';
 let students=[],homeworkData=[],chatHistory=[];
 
+// Subjects & topics
 const subjects = {
-math:{img:"https://cdn-icons-png.flaticon.com/512/1237/1237431.png",topics:["Direct & Inverse Variation","Cubes & Cube Roots","Squares & Square Roots","Algebraic Expressions"]},
-social:{img:"https://cdn-icons-png.flaticon.com/512/2942/2942730.png",topics:["Revolt of 1857","British Policies","Key Leaders","Impact on Society"]},
-biology:{img:"https://cdn-icons-png.flaticon.com/512/1995/1995623.png",topics:["Microorganisms","Plant Cells","Animal Cells","Human Body"]},
-physics:{img:"https://cdn-icons-png.flaticon.com/512/263/263116.png",topics:["Force & Pressure","Work & Energy","Light & Sound","Simple Machines"]},
-chemistry:{img:"https://cdn-icons-png.flaticon.com/512/2823/2823456.png",topics:["Coal & Petroleum","Acids & Bases","Metals & Non-metals","Chemical Reactions"]},
-computer:{img:"https://cdn-icons-png.flaticon.com/512/1082/1082609.png",topics:["Data & Its Types","Algorithms","Programming Basics","Databases"]},
-french:{img:"https://cdn-icons-png.flaticon.com/512/197/197560.png",topics:["ER Verb Conjugation","Greetings & Phrases","Numbers & Time","Common Expressions"]}
+math:{icon:"📐",topics:["Direct & Inverse Variation","Cubes & Cube Roots","Squares & Square Roots","Algebraic Expressions"]},
+social:{icon:"📜",topics:["Revolt of 1857","British Policies","Key Leaders","Impact on Society"]},
+biology:{icon:"🧬",topics:["Microorganisms","Plant Cells","Animal Cells","Human Body"]},
+physics:{icon:"🔭",topics:["Force & Pressure","Work & Energy","Light & Sound","Simple Machines"]},
+chemistry:{icon:"⚗️",topics:["Coal & Petroleum","Acids & Bases","Metals & Non-metals","Chemical Reactions"]},
+computer:{icon:"💻",topics:["Data & Its Types","Algorithms","Programming Basics","Databases"]},
+french:{icon:"🇫🇷",topics:["ER Verb Conjugation","Greetings & Phrases","Numbers & Time","Common Expressions"]}
 };
 
+// Mindmap info
 const mindmapTopics={
-math:{"Inverse Variation":"y decreases as x increases","Direct Variation":"y increases as x increases","Algebra":"Use formulas to simplify expressions"},
-social:{"Causes":"Economic and political causes of the revolt","Leaders":"Nana Saheb, Rani Laxmi Bai, etc","Events":"Battles in Kanpur, Lucknow, Delhi","Impact":"Changes in British policies and society"},
-biology:{"Bacteria":"Single-celled microorganisms","Virus":"Needs host to reproduce","Fungi":"Yeast & molds used in fermentation","Useful":"Used in food and medicines","Harmful":"Cause diseases"},
-physics:{"Force":"F=ma, basic unit: N","Pressure":"P=F/A, unit: Pa","Applications":"Push, Pull, Mechanical work"},
-chemistry:{"Coal":"Formed from dead vegetation over time","Petroleum":"Fossil fuel refined to produce fuel","Uses":"Energy, Industry"},
-computer:{"Data Types":"String, Number, Boolean","Storage":"Database, Cloud storage","Structured vs Unstructured":"Tables vs raw files"},
-french:{"ER Rules":"Remove ER ending and add proper conjugation","Examples":"Je parle, Tu parles, Il parle"}
+math:{
+"Direct & Inverse Variation":"Direct variation: y=kx, Inverse variation: xy=k",
+"Cubes & Cube Roots":"Cube of number n: n³, Cube root of x: ∛x",
+"Squares & Square Roots":"Square of n: n², Square root: √x",
+"Algebraic Expressions":"Simplify, Expand, Factorize expressions using formulas"
+},
+social:{
+"Revolt of 1857":"First major revolt against British rule in India",
+"British Policies":"Policies like Doctrine of Lapse, heavy taxation",
+"Key Leaders":"Rani Laxmi Bai, Nana Saheb, Bahadur Shah Zafar",
+"Impact on Society":"Affected peasants, soldiers, and rulers, change in administration"
+},
+biology:{
+"Microorganisms":"Bacteria, Virus, Fungi – useful & harmful",
+"Plant Cells":"Cell wall, chloroplasts, vacuoles, nucleus",
+"Animal Cells":"Cell membrane, nucleus, cytoplasm, mitochondria",
+"Human Body":"Organs & systems: digestive, circulatory, respiratory"
+},
+physics:{
+"Force & Pressure":"F=ma, Pressure=P/A, Units: N & Pa",
+"Work & Energy":"Work=W=F*d, Kinetic & Potential Energy",
+"Light & Sound":"Reflection, refraction, speed of sound, properties of light",
+"Simple Machines":"Lever, Pulley, Inclined plane – mechanical advantage"
+},
+chemistry:{
+"Coal & Petroleum":"Fuels from organic matter, refined for energy",
+"Acids & Bases":"pH scale, reactions, indicators",
+"Metals & Non-metals":"Properties, reactivity, uses",
+"Chemical Reactions":"Types: combination, decomposition, displacement"
+},
+computer:{
+"Data & Its Types":"String, Number, Boolean, Array",
+"Algorithms":"Step by step instructions to solve problem",
+"Programming Basics":"Variables, loops, conditionals, functions",
+"Databases":"Structured storage of data using SQL or NoSQL"
+},
+french:{
+"ER Verb Conjugation":"Remove ER and add endings (Je: e, Tu: es, Il: e)",
+"Greetings & Phrases":"Bonjour, Merci, Au revoir",
+"Numbers & Time":"1-100, telling time",
+"Common Expressions":"Expressions like 'Ça va?', 'Je suis...'"
+}
+};
+
+// Quiz questions
+const quizData={
+math:{
+"Direct & Inverse Variation":[{q:"If y=2x, what is y when x=5?",a:"10"},{q:"If xy=12, x=3, find y",a:"4"}],
+"Cubes & Cube Roots":[{q:"Cube of 3?",a:"27"},{q:"Cube root of 64?",a:"4"}],
+"Squares & Square Roots":[{q:"Square of 9?",a:"81"},{q:"√64?",a:"8"}],
+"Algebraic Expressions":[{q:"Simplify: x+x+2x",a:"4x"},{q:"Factorize: x²+x",a:"x(x+1)"}]
+},
+social:{
+"Revolt of 1857":[{q:"Year of Revolt of 1857?",a:"1857"},{q:"Name one leader",a:"Rani Laxmi Bai"}]
+},
+biology:{
+"Microorganisms":[{q:"Name one beneficial bacteria",a:"Lactobacillus"}]
+}
+};
+
+const worksheetData={
+math:{
+"Direct & Inverse Variation":"Solve 2x=10, Find x. Solve xy=12, x=3, find y.",
+"Cubes & Cube Roots":"Write cube of 2,3,4 and cube roots of 8,27,64.",
+"Squares & Square Roots":"Square 5,6,7. √25, √36, √49",
+"Algebraic Expressions":"Simplify: 2x+3x, Factorize: x²+2x"
+},
+social:{
+"Revolt of 1857":"List 2 causes and 2 effects of the revolt."
+},
+biology:{
+"Microorganisms":"Write 2 beneficial and 2 harmful microorganisms."
+}
 };
 
 // LOGIN
 window.login=function(role){
 const name=document.getElementById('nameInput').value.trim();
 if(!name){alert('Enter your name');return;}
-currentUser=name;
-currentRole=role;
+currentUser=name; currentRole=role;
 if(role==='student' && !students.includes(name)) students.push(name);
 document.getElementById('loginPage').style.display='none';
 document.getElementById('app').style.display='flex';
@@ -165,91 +242,90 @@ document.getElementById('teacherOnly').style.display=(role==='teacher')?'block':
 renderSubjects();
 }
 
-// SIDEBAR
+// Sidebar toggle
 window.toggleSidebar=function(){document.getElementById('sidebar').classList.toggle('collapsed');}
-
-// PAGE NAVIGATION
-window.showPage=function(pageID){
-let pages=['homePage','subjectsPage','topicPage','mindmapPage','quizPage','worksheetPage','homeworkPage','studentListPage','teacherHWPage','chatPage'];
-pages.forEach(p=>document.getElementById(p).style.display='none');
-document.getElementById(pageID).style.display='block';
-if(pageID==='mindmapPage') generateMindMapPage(currentSubject,currentTopic);
-if(pageID==='quizPage') generateQuizPage(currentSubject,currentTopic);
-if(pageID==='worksheetPage') generateWorksheetPage(currentSubject,currentTopic);
-if(pageID==='studentListPage') updateStudentList();
-if(pageID==='teacherHWPage') updateTeacherHW();
-if(pageID==='chatPage') updateChat();
+window.showPage=function(page){
+['homePage','subjectsPage','topicPage','mindmapPage','quizPage','worksheetPage','homeworkPage','studentListPage','teacherHWPage','chatPage','rewardsPage'].forEach(p=>document.getElementById(p).style.display='none');
+document.getElementById(page).style.display='block';
+if(page=='subjectsPage') renderSubjects();
 }
 
-// SUBJECTS
+// Render subjects
 function renderSubjects(){
-let container=document.getElementById('subjectGrid'); container.innerHTML='';
-for(let sub in subjects){
-let div=document.createElement('div'); div.className='subject-card';
-div.innerHTML=`<img src="${subjects[sub].img}" /><div>${sub.toUpperCase()}</div>`;
-div.onclick=function(){renderTopics(sub); showPage('topicPage'); currentSubject=sub;};
-container.appendChild(div);
-}
+let html='';
+for(let s in subjects){html+=`<div class="subject-card" onclick="selectSubject('${s}')">${subjects[s].icon}<br>${s.charAt(0).toUpperCase()+s.slice(1)}</div>`;}
+document.getElementById('subjectGrid').innerHTML=html;
 }
 
-// TOPICS
-function renderTopics(sub){
-let container=document.getElementById('topicGrid'); container.innerHTML='';
-document.getElementById('topicTitle').innerText=`Choose Topic for ${sub.toUpperCase()}`;
-subjects[sub].topics.forEach(topic=>{
-let div=document.createElement('div'); div.className='subject-card';
-div.innerHTML=`<div>${topic}</div>`;
-div.onclick=function(){currentTopic=topic; alert('Topic selected: '+topic); showPage('mindmapPage'); generateMindMapPage(sub,topic);};
-container.appendChild(div);
+// Select subject -> topics
+window.selectSubject=function(sub){
+currentSubject=sub;
+document.getElementById('subjectsPage').style.display='none';
+document.getElementById('topicPage').style.display='block';
+document.getElementById('topicTitle').innerText=`Topics in ${sub.charAt(0).toUpperCase()+sub.slice(1)}`;
+let html='';
+subjects[sub].topics.forEach(t=>{html+=`<div class="subject-card" onclick="selectTopic('${t}')">${t}</div>`;});
+document.getElementById('topicGrid').innerHTML=html;
+}
+
+// Select topic -> render mindmap, quiz, worksheet
+window.selectTopic=function(topic){
+currentTopic=topic;
+document.getElementById('topicPage').style.display='none';
+showPage('mindmapPage');
+renderMindmap();
+renderQuiz();
+renderWorksheet();
+}
+
+// Mindmap
+function renderMindmap(){
+let container=document.getElementById('mindmapContainer'); container.innerHTML='';
+let explanation=document.getElementById('mindmapExplanation');
+for(let key in mindmapTopics[currentSubject]){
+let bubble=document.createElement('span'); bubble.className='mindmap-bubble';
+bubble.innerText=key; bubble.onclick=function(){explanation.innerText=mindmapTopics[currentSubject][key];}
+container.appendChild(bubble);
+}
+explanation.innerText=`Select a bubble to see details for ${currentTopic}`;
+}
+
+// Quiz
+function renderQuiz(){
+let container=document.getElementById('quizContainer'); container.innerHTML='';
+if(!quizData[currentSubject] || !quizData[currentSubject][currentTopic]){container.innerHTML="No quiz available yet"; return;}
+quizData[currentSubject][currentTopic].forEach((q,i)=>{
+let card=document.createElement('div'); card.className='quiz-card';
+card.innerHTML=`<p>Q${i+1}: ${q.q}</p><input type="text" id="ans${i}"><button onclick="checkAnswer(${i})">Check</button><span id="res${i}"></span>`;
+container.appendChild(card);
 });
 }
 
-// MINDMAP
-function generateMindMapPage(sub,topic){
-let container=document.getElementById('mindmapContainer'); container.innerHTML='';
-let expContainer=document.getElementById('mindmapExplanation'); expContainer.innerHTML='';
-for(let t in mindmapTopics[sub]){
-let div=document.createElement('div'); div.className='mindmap-bubble';
-div.innerText=t;
-div.onclick=function(){expContainer.innerText=t+': '+mindmapTopics[sub][t];};
-container.appendChild(div);
-}
+// Check quiz answer
+window.checkAnswer=function(i){
+let val=document.getElementById('ans'+i).value.trim();
+let correct=quizData[currentSubject][currentTopic][i].a;
+document.getElementById('res'+i).innerText=(val==correct)?" ✅ Correct":" ❌ Wrong";
 }
 
-// QUIZ
-function generateQuizPage(sub,topic){
-let quizContainer=document.getElementById('quizContainer'); quizContainer.innerHTML='<p>Quiz coming soon for '+topic+'</p>';
+// Worksheet
+function renderWorksheet(){
+let container=document.getElementById('worksheetContainer'); container.innerHTML='';
+if(!worksheetData[currentSubject] || !worksheetData[currentSubject][currentTopic]){container.innerHTML="No worksheet available yet"; return;}
+let card=document.createElement('div'); card.className='worksheet-card';
+card.innerHTML=`<p>${worksheetData[currentSubject][currentTopic]}</p><textarea placeholder="Write your answer here"></textarea><button onclick="alert('Submitted!')">Submit</button>`;
+container.appendChild(card);
 }
 
-// WORKSHEET
-function generateWorksheetPage(sub,topic){
-let wsContainer=document.getElementById('worksheetContainer'); wsContainer.innerHTML='<p>Worksheet coming soon for '+topic+'</p>';
-}
-
-// HOMEWORK
+// Homework
 window.submitHW=function(){
-const hw=document.getElementById('hwText').value;
-if(!hw){alert('Enter homework'); return;}
-homeworkData.push({student:currentUser,text:hw});
-document.getElementById('hwSubmitMsg').innerText='Submitted!';
-document.getElementById('hwText').value='';
+let val=document.getElementById('hwText').value.trim();
+if(!val){alert('Write something!'); return;}
+homeworkData.push({user:currentUser,role:currentRole,text:val}); document.getElementById('hwText').value='';
+document.getElementById('hwSubmitMsg').innerText="Homework Submitted ✅";
 }
-
-// STUDENT LIST & TEACHER VIEW
-function updateStudentList(){document.getElementById('studentList').innerHTML=students.map(s=>`<div class='hw-card'>${s}</div>`).join('');}
-function updateTeacherHW(){document.getElementById('allHW').innerHTML=homeworkData.map(hw=>`<div class='hw-card'><b>${hw.student}</b>: ${hw.text}</div>`).join('');}
-
-// CHAT
-function updateChat(){
-const container=document.getElementById('chatContainer'); container.innerHTML='';
-chatHistory.forEach(msg=>container.innerHTML+=`<div class='hw-card'><b>${msg.user}</b>: ${msg.text}</div>`);
-container.scrollTop=container.scrollHeight;
 }
-document.getElementById('sendBtn').onclick=function(){
-const text=document.getElementById('chatInput').value.trim(); if(!text) return;
-chatHistory.push({user:currentUser,text:text}); document.getElementById('chatInput').value=''; updateChat();
-}
-};
 </script>
 </body>
 </html>
+
