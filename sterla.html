@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STERLA – Interactive Learning</title>
+<style>
+* {margin:0; padding:0; box-sizing:border-box; font-family:Poppins,sans-serif;}
+body {height:100vh; background: linear-gradient(135deg,#e8f1ff,#ffffff); overflow:hidden;}
+a {text-decoration:none;}
+
+/* LOGIN PAGE */
+#loginPage {display:flex; height:100vh; }
+.login-left { flex:1; display:flex; justify-content:center; align-items:center; background:linear-gradient(135deg,#8e2de2,#4a00e0); position:relative; overflow:hidden;}
+.login-left h1 {color:white; font-size:64px; background: rgba(255,255,255,0.1); padding:20px 40px; border-radius:20px; backdrop-filter:blur(15px);}
+.login-left::after {content:""; position:absolute; width:300px; height:300px; background:rgba(255,255,255,0.1); border-radius:50%; top:20%; left:10%; filter:blur(100px);}
+.login-right { flex:1; display:flex; justify-content:center; align-items:center; }
+.login-card { width:380px; padding:40px; background: rgba(255,255,255,0.35); border-radius:25px; box-shadow:0 15px 40px rgba(0,0,0,0.2); backdrop-filter:blur(25px); text-align:center; animation:fadeUp 0.7s ease; }
+@keyframes fadeUp { from{opacity:0; transform:translateY(30px);} to{opacity:1; transform:translateY(0);} }
+.login-card h2 { font-size:32px; margin-bottom:20px; color:#0d47a1; }
+#nameInput { width:100%; padding:14px; border-radius:12px; border:2px solid #0d47a1; outline:none; font-size:16px; margin-bottom:25px; transition:0.3s;}
+#nameInput:focus{border-color:#4a00e0;}
+.role-btn { width:48%; padding:14px; background:#0d47a1; color:white; border:none; margin:5px; border-radius:12px; cursor:pointer; transition:0.3s; }
+.role-btn:hover { background:#1565c0; transform:scale(1.05);}
+
+/* APP */
+#app { display:none; width:100%; height:100%; display:flex; }
+
+/* SIDEBAR */
+.sidebar { width:260px; background:rgba(255,255,255,0.35); backdrop-filter:blur(20px); border-right:2px solid rgba(255,255,255,0.5); height:100vh; position:relative; transition:width 0.3s;}
+.sidebar.collapsed {width:70px;}
+.hamburger {position:absolute; top:20px; right:-40px; background:#0d47a1; color:white; padding:10px 14px; border-radius:12px; cursor:pointer; z-index:10;}
+.sidebar h2 {color:#0d47a1; text-align:center; padding:20px 0; font-size:22px;}
+.sidebar.collapsed h2{display:none;}
+.nav-btn {width:100%; padding:15px; background:transparent; border:none; text-align:left; font-size:16px; cursor:pointer; color:#0d47a1; transition:0.2s;}
+.nav-btn:hover{background:rgba(255,255,255,0.5);}
+.nav-icon{margin-right:10px;}
+.sidebar.collapsed .nav-text{display:none;}
+
+/* CONTENT */
+.content { width:100%; padding:30px; overflow-y:scroll; background:linear-gradient(180deg,#f5f7fb,#e3f2fd);}
+.content h1 { color:#0d47a1; margin-bottom:20px; font-size:32px; }
+.subject-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; }
+.subject-card { background:rgba(255,255,255,0.5); padding:20px; border-radius:20px; box-shadow:0 8px 30px rgba(0,0,0,0.15); cursor:pointer; transition:0.3s; text-align:center;}
+.subject-card img {width:50px; margin-bottom:10px;}
+.subject-card:hover { transform:translateY(-5px) scale(1.05); box-shadow:0 15px 40px rgba(0,0,0,0.2);}
+.mindmap-bubble { display:inline-block; padding:14px 24px; background:#bbdefb; border-radius:50px; margin:10px; font-size:16px; color:#0d47a1; animation:bubble 0.4s ease; cursor:pointer; transition:0.3s; }
+.mindmap-bubble:hover { transform:scale(1.15); background:#90caf9; }
+@keyframes bubble { from{transform:scale(0.7); opacity:0;} to{transform:scale(1); opacity:1;} }
+.quiz-card,.worksheet-card,.hw-card { background:#ffffffcc; padding:20px; border-radius:15px; margin:10px 0; box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+textarea { resize:none; }
+#chatContainer { height:200px; overflow-y:scroll; border:1px solid #0d47a1; border-radius:12px; padding:10px; margin-bottom:10px; background:rgba(255,255,255,0.5);}
+#chatInput { width:80%; padding:10px; border-radius:10px; border:2px solid #0d47a1;}
+#sendBtn { padding:10px 15px; background:#0d47a1; color:white; border:none; border-radius:10px; cursor:pointer;}
+.mindmap-explanation{margin:15px 0; padding:15px; background:#e3f2fd; border-radius:15px; font-size:16px; line-height:1.5;}
+
+/* HOMEPAGE */
+#welcomeCard {background: rgba(255,255,255,0.4); padding:30px; border-radius:25px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.2); animation:fadeUp 1s ease;}
+#welcomeCard img {width:100px; margin-bottom:15px;}
+#welcomeCard h2 {font-size:28px; color:#0d47a1; margin-bottom:10px;}
+#welcomeCard p {font-size:18px; color:#0d47a1; line-height:1.5;}
+
+</style>
+</head>
+<body>
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+<div class="login-left"><h1>STERLA</h1></div>
+<div class="login-right">
+<div class="login-card">
+<h2>Login</h2>
+<input id="nameInput" type="text" placeholder="Enter your name"/>
+<div>
+<button class="role-btn" onclick="login('student')">Student</button>
+<button class="role-btn" onclick="login('teacher')">Teacher</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="sidebar" id="sidebar">
+<div class="hamburger" onclick="toggleSidebar()">≡</div>
+<h2 id="userRoleTitle">Dashboard</h2>
+<button class="nav-btn" onclick="showPage('homePage')"><span class="nav-icon">🏠</span><span class="nav-text">Home</span></button>
+<button class="nav-btn" onclick="showPage('subjectsPage')"><span class="nav-icon">📘</span><span class="nav-text">Subjects</span></button>
+<button class="nav-btn" onclick="showPage('mindmapPage')"><span class="nav-icon">🧠</span><span class="nav-text">Mind Map</span></button>
+<button class="nav-btn" onclick="showPage('quizPage')"><span class="nav-icon">❓</span><span class="nav-text">Quiz</span></button>
+<button class="nav-btn" onclick="showPage('worksheetPage')"><span class="nav-icon">📄</span><span class="nav-text">Worksheet</span></button>
+<button class="nav-btn" onclick="showPage('homeworkPage')"><span class="nav-icon">📤</span><span class="nav-text">Submit Homework</span></button>
+<div id="teacherOnly" style="display:none;">
+<button class="nav-btn" onclick="showPage('studentListPage')"><span class="nav-icon">🧑‍🎓</span><span class="nav-text">View Students</span></button>
+<button class="nav-btn" onclick="showPage('teacherHWPage')"><span class="nav-icon">📥</span><span class="nav-text">View Homework</span></button>
+<button class="nav-btn" onclick="showPage('chatPage')"><span class="nav-icon">💬</span><span class="nav-text">Chat</span></button>
+</div>
+</div>
+
+<div class="content" id="content">
+<div id="homePage">
+<div id="welcomeCard">
+<img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="logo"/>
+<h2 id="welcomeTitle">Welcome!</h2>
+<p>Explore your subjects, attempt quizzes and worksheets, view mindmaps, and submit your homework easily. Enjoy interactive learning with STERLA!</p>
+</div>
+</div>
+
+<div id="subjectsPage" style="display:none;">
+<h1>Choose a Subject</h1>
+<div class="subject-grid" id="subjectGrid"></div>
+</div>
+
+<div id="topicPage" style="display:none;">
+<h1 id="topicTitle">Choose a Topic</h1>
+<div class="subject-grid" id="topicGrid"></div>
+</div>
+
+<div id="mindmapPage" style="display:none;"><h1>Mind Map</h1><div id="mindmapContainer"></div><div id="mindmapExplanation" class="mindmap-explanation"></div></div>
+<div id="quizPage" style="display:none;"><h1>Quiz</h1><div id="quizContainer"></div></div>
+<div id="worksheetPage" style="display:none;"><h1>Worksheet</h1><div id="worksheetContainer"></div></div>
+<div id="homeworkPage" style="display:none;"><h1>Submit Homework</h1><textarea id="hwText" placeholder="Write your homework here"></textarea><br><button class="role-btn" onclick="submitHW()">Submit</button><div id="hwSubmitMsg"></div></div>
+<div id="studentListPage" style="display:none;"><h1>Students Logged In</h1><div id="studentList"></div></div>
+<div id="teacherHWPage" style="display:none;"><h1>Homework Submissions</h1><div id="allHW"></div></div>
+<div id="chatPage" style="display:none;"><h1>Class Chat</h1><div id="chatContainer"></div><input id="chatInput" placeholder="Type message"><button id="sendBtn">Send</button></div>
+
+</div>
+</div>
+
+<script>
+window.onload=function(){
+let currentUser='',currentRole='',currentSubject='',currentTopic='';
+let students=[],homeworkData=[],chatHistory=[];
+
+const subjects = {
+math:{img:"https://cdn-icons-png.flaticon.com/512/1237/1237431.png",topics:["Direct & Inverse Variation","Cubes & Cube Roots","Squares & Square Roots","Algebraic Expressions"]},
+social:{img:"https://cdn-icons-png.flaticon.com/512/2942/2942730.png",topics:["Revolt of 1857","British Policies","Key Leaders","Impact on Society"]},
+biology:{img:"https://cdn-icons-png.flaticon.com/512/1995/1995623.png",topics:["Microorganisms","Plant Cells","Animal Cells","Human Body"]},
+physics:{img:"https://cdn-icons-png.flaticon.com/512/263/263116.png",topics:["Force & Pressure","Work & Energy","Light & Sound","Simple Machines"]},
+chemistry:{img:"https://cdn-icons-png.flaticon.com/512/2823/2823456.png",topics:["Coal & Petroleum","Acids & Bases","Metals & Non-metals","Chemical Reactions"]},
+computer:{img:"https://cdn-icons-png.flaticon.com/512/1082/1082609.png",topics:["Data & Its Types","Algorithms","Programming Basics","Databases"]},
+french:{img:"https://cdn-icons-png.flaticon.com/512/197/197560.png",topics:["ER Verb Conjugation","Greetings & Phrases","Numbers & Time","Common Expressions"]}
+};
+
+const mindmapTopics={
+math:{"Inverse Variation":"y decreases as x increases","Direct Variation":"y increases as x increases","Algebra":"Use formulas to simplify expressions"},
+social:{"Causes":"Economic and political causes of the revolt","Leaders":"Nana Saheb, Rani Laxmi Bai, etc","Events":"Battles in Kanpur, Lucknow, Delhi","Impact":"Changes in British policies and society"},
+biology:{"Bacteria":"Single-celled microorganisms","Virus":"Needs host to reproduce","Fungi":"Yeast & molds used in fermentation","Useful":"Used in food and medicines","Harmful":"Cause diseases"},
+physics:{"Force":"F=ma, basic unit: N","Pressure":"P=F/A, unit: Pa","Applications":"Push, Pull, Mechanical work"},
+chemistry:{"Coal":"Formed from dead vegetation over time","Petroleum":"Fossil fuel refined to produce fuel","Uses":"Energy, Industry"},
+computer:{"Data Types":"String, Number, Boolean","Storage":"Database, Cloud storage","Structured vs Unstructured":"Tables vs raw files"},
+french:{"ER Rules":"Remove ER ending and add proper conjugation","Examples":"Je parle, Tu parles, Il parle"}
+};
+
+// LOGIN
+window.login=function(role){
+const name=document.getElementById('nameInput').value.trim();
+if(!name){alert('Enter your name');return;}
+currentUser=name;
+currentRole=role;
+if(role==='student' && !students.includes(name)) students.push(name);
+document.getElementById('loginPage').style.display='none';
+document.getElementById('app').style.display='flex';
+document.getElementById('welcomeTitle').innerText=`Welcome, ${name}!`;
+document.getElementById('teacherOnly').style.display=(role==='teacher')?'block':'none';
+renderSubjects();
+}
+
+// SIDEBAR
+window.toggleSidebar=function(){document.getElementById('sidebar').classList.toggle('collapsed');}
+
+// PAGE NAVIGATION
+window.showPage=function(pageID){
+let pages=['homePage','subjectsPage','topicPage','mindmapPage','quizPage','worksheetPage','homeworkPage','studentListPage','teacherHWPage','chatPage'];
+pages.forEach(p=>document.getElementById(p).style.display='none');
+document.getElementById(pageID).style.display='block';
+if(pageID==='mindmapPage') generateMindMapPage(currentSubject,currentTopic);
+if(pageID==='quizPage') generateQuizPage(currentSubject,currentTopic);
+if(pageID==='worksheetPage') generateWorksheetPage(currentSubject,currentTopic);
+if(pageID==='studentListPage') updateStudentList();
+if(pageID==='teacherHWPage') updateTeacherHW();
+if(pageID==='chatPage') updateChat();
+}
+
+// SUBJECTS
+function renderSubjects(){
+let container=document.getElementById('subjectGrid'); container.innerHTML='';
+for(let sub in subjects){
+let div=document.createElement('div'); div.className='subject-card';
+div.innerHTML=`<img src="${subjects[sub].img}" /><div>${sub.toUpperCase()}</div>`;
+div.onclick=function(){renderTopics(sub); showPage('topicPage'); currentSubject=sub;};
+container.appendChild(div);
+}
+}
+
+// TOPICS
+function renderTopics(sub){
+let container=document.getElementById('topicGrid'); container.innerHTML='';
+document.getElementById('topicTitle').innerText=`Choose Topic for ${sub.toUpperCase()}`;
+subjects[sub].topics.forEach(topic=>{
+let div=document.createElement('div'); div.className='subject-card';
+div.innerHTML=`<div>${topic}</div>`;
+div.onclick=function(){currentTopic=topic; alert('Topic selected: '+topic); showPage('mindmapPage'); generateMindMapPage(sub,topic);};
+container.appendChild(div);
+});
+}
+
+// MINDMAP
+function generateMindMapPage(sub,topic){
+let container=document.getElementById('mindmapContainer'); container.innerHTML='';
+let expContainer=document.getElementById('mindmapExplanation'); expContainer.innerHTML='';
+for(let t in mindmapTopics[sub]){
+let div=document.createElement('div'); div.className='mindmap-bubble';
+div.innerText=t;
+div.onclick=function(){expContainer.innerText=t+': '+mindmapTopics[sub][t];};
+container.appendChild(div);
+}
+}
+
+// QUIZ
+function generateQuizPage(sub,topic){
+let quizContainer=document.getElementById('quizContainer'); quizContainer.innerHTML='<p>Quiz coming soon for '+topic+'</p>';
+}
+
+// WORKSHEET
+function generateWorksheetPage(sub,topic){
+let wsContainer=document.getElementById('worksheetContainer'); wsContainer.innerHTML='<p>Worksheet coming soon for '+topic+'</p>';
+}
+
+// HOMEWORK
+window.submitHW=function(){
+const hw=document.getElementById('hwText').value;
+if(!hw){alert('Enter homework'); return;}
+homeworkData.push({student:currentUser,text:hw});
+document.getElementById('hwSubmitMsg').innerText='Submitted!';
+document.getElementById('hwText').value='';
+}
+
+// STUDENT LIST & TEACHER VIEW
+function updateStudentList(){document.getElementById('studentList').innerHTML=students.map(s=>`<div class='hw-card'>${s}</div>`).join('');}
+function updateTeacherHW(){document.getElementById('allHW').innerHTML=homeworkData.map(hw=>`<div class='hw-card'><b>${hw.student}</b>: ${hw.text}</div>`).join('');}
+
+// CHAT
+function updateChat(){
+const container=document.getElementById('chatContainer'); container.innerHTML='';
+chatHistory.forEach(msg=>container.innerHTML+=`<div class='hw-card'><b>${msg.user}</b>: ${msg.text}</div>`);
+container.scrollTop=container.scrollHeight;
+}
+document.getElementById('sendBtn').onclick=function(){
+const text=document.getElementById('chatInput').value.trim(); if(!text) return;
+chatHistory.push({user:currentUser,text:text}); document.getElementById('chatInput').value=''; updateChat();
+}
+};
+</script>
+</body>
+</html>
